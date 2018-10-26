@@ -1,7 +1,8 @@
-package emojidata
+package twitteranalyzer
 
 import java.util.concurrent.LinkedBlockingQueue
 
+import akka.actor.ActorSystem
 import com.twitter.hbc.ClientBuilder
 import com.twitter.hbc.core.endpoint.StatusesSampleEndpoint
 import com.twitter.hbc.core.{Constants, Hosts, HttpHosts}
@@ -15,6 +16,10 @@ object Main {
   def main(args: Array[String]) {
     val shutdown = new Shutdown()
     Runtime.getRuntime.addShutdownHook(shutdown)
+
+    val system = ActorSystem("twitterAnalyzer")
+
+
 
     val msgQueue = new LinkedBlockingQueue[String](1000000)
     val eventQueue = new LinkedBlockingQueue[Event](1000)

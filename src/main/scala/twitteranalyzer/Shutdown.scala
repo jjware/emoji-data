@@ -1,4 +1,4 @@
-package emojidata
+package twitteranalyzer
 
 import java.util
 

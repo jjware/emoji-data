@@ -9,10 +9,12 @@ object TweetTotalActor {
 }
 
 class TweetTotalActor extends Actor with ActorLogging {
-  private var total: Long = 0
+  private val total: Long = 0
 
-  override def receive: Receive = {
-    case TweetMessage(_) => total += 1
+  override def receive: Receive = onMessage(total)
+
+  private def onMessage(total: Long): Receive = {
+    case TweetMessage(_) => context.become(onMessage(total + 1))
     case RequestTotal(id) => sender() ! ResponseTotal(id, total)
   }
 }

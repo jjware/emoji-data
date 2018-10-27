@@ -9,8 +9,10 @@ class TweetPropagatingActor(actors: List[ActorRef], mapper: ObjectMapper) extend
     case Message(text) =>
       try {
         val tweet = mapper.readValue(text, classOf[Tweet])
-        for (actor <- actors) {
-          actor ! TweetMessage(tweet)
+        if (tweet.id != 0) {
+          for (actor <- actors) {
+            actor ! TweetMessage(tweet)
+          }
         }
       } catch {
         case e: Exception => log.error("exception while deserializing tweet: {}", e)

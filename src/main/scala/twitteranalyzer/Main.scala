@@ -12,6 +12,7 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.twitter.hbc.ClientBuilder
 import com.twitter.hbc.core.endpoint.StatusesSampleEndpoint
 import com.twitter.hbc.core.{Constants, HttpHosts}
@@ -20,6 +21,7 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor
 import com.twitter.hbc.httpclient.auth.OAuth1
 import org.apache.log4j.{ConsoleAppender, Level, PatternLayout}
 import org.slf4j.LoggerFactory
+import twitteranalyzer.TweetEmojiActor.{RequestPercentEmoji, RequestTopEmojis, ResponsePercentEmoji, ResponseTopEmojis}
 import twitteranalyzer.TweetPropagatingActor.Message
 import twitteranalyzer.TweetTotalActor.{RequestTotal, ResponseTotal}
 
@@ -40,6 +42,7 @@ object Main {
 
     val logger = LoggerFactory.getLogger("Main")
     val mapper = new ObjectMapper()
+    mapper.registerModule(DefaultScalaModule)
 
     val shutdown = new Shutdown()
     Runtime.getRuntime.addShutdownHook(shutdown)
@@ -50,10 +53,12 @@ object Main {
 
     val printingActor = system.actorOf(Props[TweetPrintingActor])
     val totalActor = system.actorOf(Props[TweetTotalActor])
+    val emojiActor = system.actorOf(Props[TweetEmojiActor])
 
     val actorGroup = List(
       printingActor,
-      totalActor
+      totalActor,
+      emojiActor
     )
     val propagatingActor = system.actorOf(TweetPropagatingActor.props(actorGroup, mapper))
 
@@ -66,7 +71,25 @@ object Main {
           val result = Await.result(totalResponse, timeout.duration)
           complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.total.toString))
         }
-      }
+      } ~
+        get {
+          path("emoji-percent") {
+            implicit val timeout: Timeout = Timeout(3 seconds)
+            val response = emojiActor ? RequestPercentEmoji(java.util.UUID.randomUUID().toString)
+            val percentResponse: Future[ResponsePercentEmoji] = response.mapTo[ResponsePercentEmoji]
+            val result = Await.result(percentResponse, timeout.duration)
+            complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.percent.toString))
+          }
+        } ~
+        get {
+          path("top-emojis") {
+            implicit val timeout: Timeout = Timeout(3 seconds)
+            val response = emojiActor ? RequestTopEmojis(java.util.UUID.randomUUID().toString)
+            val topEmojisResponse: Future[ResponseTopEmojis] = response.mapTo[ResponseTopEmojis]
+            val result = Await.result(topEmojisResponse, timeout.duration)
+            complete(HttpEntity(ContentTypes.`application/json`, mapper.writeValueAsString(result.emojis)))
+          }
+        }
 
     val binding = Http().bindAndHandle(routes, "localhost", 8080)
 

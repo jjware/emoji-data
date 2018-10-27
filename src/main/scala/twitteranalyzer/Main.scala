@@ -56,7 +56,6 @@ object Main {
     val emojiActor = system.actorOf(Props[TweetEmojiActor])
 
     val actorGroup = List(
-      printingActor,
       totalActor,
       emojiActor
     )
@@ -101,10 +100,10 @@ object Main {
     val hosebirdHosts = new HttpHosts(Constants.STREAM_HOST)
     val hosebirdEndpoint = new StatusesSampleEndpoint()
     val hosebirdAuth = new OAuth1(
-      "",
-      "",
-      "",
-      ""
+      System.getenv("CONSUMER_KEY"),
+      System.getenv("CONSUMER_SECRET"),
+      System.getenv("ACCESS_TOKEN"),
+      System.getenv("ACCESS_SECRET")
     )
 
     val hosebirdClient = new ClientBuilder()

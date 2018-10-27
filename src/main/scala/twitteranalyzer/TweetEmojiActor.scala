@@ -4,40 +4,54 @@ import akka.actor.Actor
 import com.vdurmont.emoji.EmojiParser
 import twitteranalyzer.TweetEmojiActor.{RequestPercentEmoji, RequestTopEmojis, ResponsePercentEmoji, ResponseTopEmojis}
 
-import scala.collection.mutable
+import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 
 object TweetEmojiActor {
+
   final case class RequestPercentEmoji(correlationId: String)
-  final case class ResponsePercentEmoji(correlationId: String, percent: Int)
+
+  final case class ResponsePercentEmoji(correlationId: String, percent: Double)
+
   final case class RequestTopEmojis(correlationId: String)
+
   final case class ResponseTopEmojis(correlationId: String, emojis: List[String])
+
 }
 
 class TweetEmojiActor extends Actor {
-  private val emojiCounts: mutable.Map[String, Long] = new mutable.HashMap()
-  private var totalTweetsWithEmoji = 0
-  private var totalTweets: Long = 0
+  override def receive = onMessage(Map.empty, 0, 0)
 
-  override def receive: Receive = {
+  private def onMessage(emojiCounts: Map[String, Long],
+                totalEmojiTweets: Long,
+                totalTweets: Long): Receive = {
     case TweetMessage(tweet) => {
-      totalTweets += 1
+      val newTotalTweets = totalTweets + 1
       val emojis = EmojiParser.extractEmojis(tweet.text).toList
-      if (emojis.nonEmpty) {
-        totalTweetsWithEmoji += 1
-      }
-
-      for (emoji <- emojis) {
-          emojiCounts.put(emoji, emojiCounts.get(emoji).map(_ + 1).getOrElse(1))
-      }
+      val newEmojiTweets = if (emojis.nonEmpty) totalEmojiTweets + 1 else totalEmojiTweets
+      val newEmojiCounts = populateMap(emojiCounts, emojis)
+      context become onMessage(newEmojiCounts, newEmojiTweets, newTotalTweets)
     }
     case RequestPercentEmoji(id) => {
-      val percent = (totalTweetsWithEmoji / totalTweets) * 100
-      sender() ! ResponsePercentEmoji(id, percent.toInt)
+      val percent: Double = if (totalTweets > 0) {
+        totalEmojiTweets.toDouble / totalTweets.toDouble * 100d
+      } else 0d
+      sender() ! ResponsePercentEmoji(id, BigDecimal(percent).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
     }
     case RequestTopEmojis(id) => {
       val topEmojis = emojiCounts.toList.sortBy(x => x._2).reverse.take(5)
       sender() ! ResponseTopEmojis(id, topEmojis.map(x => x._1))
+    }
+  }
+
+  @tailrec
+  private def populateMap(emojiMap: Map[String, Long], emojis: List[String]): Map[String, Long] = {
+    if (emojis.nonEmpty) {
+      val emoji = emojis.get(0)
+      val newMap: Map[String, Long] = emojiMap + (emoji -> emojiMap.get(emoji).map(_ + 1).getOrElse(1))
+      populateMap(newMap, emojis.drop(1))
+    } else {
+      emojiMap
     }
   }
 }

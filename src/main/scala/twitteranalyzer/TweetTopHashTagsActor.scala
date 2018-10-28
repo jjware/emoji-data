@@ -1,17 +1,17 @@
 package twitteranalyzer
 
 import akka.actor.Actor
-import twitteranalyzer.TweetHashTagActor.{RequestTopHashTags, ResponseTopHashTags}
+import twitteranalyzer.TweetTopHashTagsActor.{RequestTopHashTags, ResponseTopHashTags}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 
-object TweetHashTagActor {
+object TweetTopHashTagsActor {
   final case class RequestTopHashTags(correlationId: String, num: Int)
   final case class ResponseTopHashTags(correlationId: String, hashTags: List[String])
 }
 
-class TweetHashTagActor extends Actor {
+class TweetTopHashTagsActor extends Actor {
   override def receive: Receive = onMessage(HashMap.empty)
 
   private def onMessage(hashMap: Map[String, Long]): Receive = {

@@ -23,6 +23,7 @@ import org.apache.log4j.{ConsoleAppender, Level, PatternLayout}
 import org.slf4j.LoggerFactory
 import twitteranalyzer.TweetEmojiActor.{RequestPercentEmoji, RequestTopEmojis, ResponsePercentEmoji, ResponseTopEmojis}
 import twitteranalyzer.TweetPropagatingActor.Message
+import twitteranalyzer.TweetRateActor.{RequestByHour, RequestByMinute, RequestBySecond, ResponseRate}
 import twitteranalyzer.TweetTotalActor.{RequestTotal, ResponseTotal}
 
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -54,10 +55,12 @@ object Main {
     val printingActor = system.actorOf(Props[TweetPrintingActor])
     val totalActor = system.actorOf(Props[TweetTotalActor])
     val emojiActor = system.actorOf(Props[TweetEmojiActor])
+    val tweetRateActor = system.actorOf(Props[TweetRateActor])
 
     val actorGroup = List(
       totalActor,
-      emojiActor
+      emojiActor,
+      tweetRateActor
     )
     val propagatingActor = system.actorOf(TweetPropagatingActor.props(actorGroup, mapper))
 
@@ -71,23 +74,54 @@ object Main {
           complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.total.toString))
         }
       } ~
-        get {
-          path("emoji-percent") {
-            implicit val timeout: Timeout = Timeout(3 seconds)
-            val response = emojiActor ? RequestPercentEmoji(java.util.UUID.randomUUID().toString)
-            val percentResponse: Future[ResponsePercentEmoji] = response.mapTo[ResponsePercentEmoji]
-            val result = Await.result(percentResponse, timeout.duration)
-            complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.percent.toString))
-          }
+        pathPrefix("emoji") {
+          get {
+            path("percent") {
+              implicit val timeout: Timeout = Timeout(3 seconds)
+              val response = emojiActor ? RequestPercentEmoji(java.util.UUID.randomUUID().toString)
+              val percentResponse: Future[ResponsePercentEmoji] = response.mapTo[ResponsePercentEmoji]
+              val result = Await.result(percentResponse, timeout.duration)
+              complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.percent.toString))
+            }
+          } ~
+            get {
+              path("top") {
+                implicit val timeout: Timeout = Timeout(3 seconds)
+                val response = emojiActor ? RequestTopEmojis(java.util.UUID.randomUUID().toString)
+                val topEmojisResponse: Future[ResponseTopEmojis] = response.mapTo[ResponseTopEmojis]
+                val result = Await.result(topEmojisResponse, timeout.duration)
+                complete(HttpEntity(ContentTypes.`application/json`, mapper.writeValueAsString(result.emojis)))
+              }
+            }
         } ~
-        get {
-          path("top-emojis") {
-            implicit val timeout: Timeout = Timeout(3 seconds)
-            val response = emojiActor ? RequestTopEmojis(java.util.UUID.randomUUID().toString)
-            val topEmojisResponse: Future[ResponseTopEmojis] = response.mapTo[ResponseTopEmojis]
-            val result = Await.result(topEmojisResponse, timeout.duration)
-            complete(HttpEntity(ContentTypes.`application/json`, mapper.writeValueAsString(result.emojis)))
-          }
+        pathPrefix("rate") {
+          get {
+            path("hour") {
+              implicit val timeout: Timeout = Timeout(3 seconds)
+              val response = tweetRateActor ? RequestByHour(java.util.UUID.randomUUID().toString)
+              val hourlyResponse: Future[ResponseRate] = response.mapTo[ResponseRate]
+              val result = Await.result(hourlyResponse, timeout.duration)
+              complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.value.toString))
+            }
+          } ~
+            get {
+              path("minute") {
+                implicit val timeout: Timeout = Timeout(3 seconds)
+                val response = tweetRateActor ? RequestByMinute(java.util.UUID.randomUUID().toString)
+                val minutelyResponse: Future[ResponseRate] = response.mapTo[ResponseRate]
+                val result = Await.result(minutelyResponse, timeout.duration)
+                complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.value.toString))
+              }
+            } ~
+            get {
+              path("second") {
+                implicit val timeout: Timeout = Timeout(3 seconds)
+                val response = tweetRateActor ? RequestBySecond(java.util.UUID.randomUUID().toString)
+                val secondlyResponse: Future[ResponseRate] = response.mapTo[ResponseRate]
+                val result = Await.result(secondlyResponse, timeout.duration)
+                complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.value.toString))
+              }
+            }
         }
 
     val binding = Http().bindAndHandle(routes, "localhost", 8080)

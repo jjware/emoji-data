@@ -22,6 +22,7 @@ import com.twitter.hbc.httpclient.auth.OAuth1
 import org.apache.log4j.{ConsoleAppender, Level, PatternLayout}
 import org.slf4j.LoggerFactory
 import twitteranalyzer.TweetEmojiActor.{RequestPercentEmoji, RequestTopEmojis, ResponsePercentEmoji, ResponseTopEmojis}
+import twitteranalyzer.TweetHashTagActor.{RequestTopHashTags, ResponseTopHashTags}
 import twitteranalyzer.TweetPropagatingActor.Message
 import twitteranalyzer.TweetRateActor.{RequestByHour, RequestByMinute, RequestBySecond, ResponseRate}
 import twitteranalyzer.TweetTotalActor.{RequestTotal, ResponseTotal}
@@ -56,11 +57,13 @@ object Main {
     val totalActor = system.actorOf(Props[TweetTotalActor])
     val emojiActor = system.actorOf(Props[TweetEmojiActor])
     val tweetRateActor = system.actorOf(Props[TweetRateActor])
+    val tweetHashTagActor = system.actorOf(Props[TweetHashTagActor])
 
     val actorGroup = List(
       totalActor,
       emojiActor,
-      tweetRateActor
+      tweetRateActor,
+      tweetHashTagActor
     )
     val propagatingActor = system.actorOf(TweetPropagatingActor.props(actorGroup, mapper))
 
@@ -74,7 +77,7 @@ object Main {
           complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.total.toString))
         }
       } ~
-        pathPrefix("emoji") {
+        pathPrefix("emojis") {
           get {
             path("percent") {
               implicit val timeout: Timeout = Timeout(3 seconds)
@@ -122,7 +125,18 @@ object Main {
                 complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, result.value.toString))
               }
             }
+        } ~
+      pathPrefix("hashTags") {
+        get {
+          path("top") {
+            implicit val timeout: Timeout = Timeout(3 seconds)
+            val response = tweetHashTagActor ? RequestTopHashTags(java.util.UUID.randomUUID().toString, 5)
+            val topHashTagsResponse: Future[ResponseTopHashTags] = response.mapTo[ResponseTopHashTags]
+            val result = Await.result(topHashTagsResponse, timeout.duration)
+            complete(HttpEntity(ContentTypes.`application/json`, mapper.writeValueAsString(result.hashTags)))
+          }
         }
+      }
 
     val binding = Http().bindAndHandle(routes, "localhost", 8080)
 

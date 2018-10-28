@@ -11,15 +11,15 @@ case class Tweet(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 case class TweetEntities(
-                          @JsonProperty("hashtags") hashTags: Array[TweetHashTag],
-                          @JsonProperty("urls") urls: Array[TweetURL],
-                          @JsonProperty("media") media: Array[TweetMedia]
+                          @JsonProperty("hashtags") hashTags: List[TweetHashTag],
+                          @JsonProperty("urls") urls: List[TweetURL],
+                          @JsonProperty("media") media: List[TweetMedia]
                         )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 case class TweetHashTag(
                          @JsonProperty("text") text: String,
-                         @JsonProperty("indices") indices: Array[Int]
+                         @JsonProperty("indices") indices: List[Int]
                        )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -27,7 +27,7 @@ case class TweetURL(
                      @JsonProperty("url") url: String,
                      @JsonProperty("display_url") displayUrl: String,
                      @JsonProperty("expanded_url") expandedUrl: String,
-                     @JsonProperty("text") indices: Array[Int]
+                     @JsonProperty("text") indices: List[Int]
                    )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

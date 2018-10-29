@@ -135,11 +135,11 @@ object Main {
               }
             }
         } ~
-        pathPrefix("hashTags") {
+        pathPrefix("hashtags") {
           get {
-            path("top") {
+            path("top" / IntNumber) { num =>
               implicit val timeout: Timeout = Timeout(3 seconds)
-              val response = tweetHashTagActor ? RequestTopHashTags(java.util.UUID.randomUUID().toString, 5)
+              val response = tweetHashTagActor ? RequestTopHashTags(java.util.UUID.randomUUID().toString, num)
               val topHashTagsResponse: Future[ResponseTopHashTags] = response.mapTo[ResponseTopHashTags]
               val result = Await.result(topHashTagsResponse, timeout.duration)
               complete(HttpEntity(ContentTypes.`application/json`, mapper.writeValueAsString(result.hashTags)))
@@ -157,9 +157,9 @@ object Main {
             }
           } ~
           get {
-            path("top") {
+            path("top" / IntNumber) { num =>
               implicit val timeout: Timeout = Timeout(3 seconds)
-              val response = tweetTopDomainsActor ? RequestTopDomains(java.util.UUID.randomUUID().toString, 5)
+              val response = tweetTopDomainsActor ? RequestTopDomains(java.util.UUID.randomUUID().toString, num)
               val topDomainsResponse: Future[ResponseTopDomains] = response.mapTo[ResponseTopDomains]
               val result = Await.result(topDomainsResponse, timeout.duration)
               complete(HttpEntity(ContentTypes.`application/json`, mapper.writeValueAsString(result.domains)))

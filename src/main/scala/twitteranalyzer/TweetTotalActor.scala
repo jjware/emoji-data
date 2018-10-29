@@ -4,8 +4,11 @@ import akka.actor.{Actor, ActorLogging}
 import twitteranalyzer.TweetTotalActor.{RequestTotal, ResponseTotal}
 
 object TweetTotalActor {
+
   final case class RequestTotal(correlationId: String)
+
   final case class ResponseTotal(correlationId: String, total: Long)
+
 }
 
 class TweetTotalActor extends Actor with ActorLogging {

@@ -7,8 +7,11 @@ import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 
 object TweetTopDomainsActor {
+
   final case class RequestTopDomains(correlationId: String, num: Int)
+
   final case class ResponseTopDomains(correlationId: String, domains: List[String])
+
 }
 
 class TweetTopDomainsActor extends Actor {
@@ -18,7 +21,7 @@ class TweetTopDomainsActor extends Actor {
     case TweetMessage(tweet) =>
       context become onMessage(populateMap(domainMap, tweet.entities.urls))
     case RequestTopDomains(id, num) =>
-      val topDomains = domainMap.toList.sortBy(- _._2).take(num)
+      val topDomains = domainMap.toList.sortBy(-_._2).take(num)
       sender() ! ResponseTopDomains(id, topDomains.map(_._1))
   }
 

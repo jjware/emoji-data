@@ -4,8 +4,11 @@ import akka.actor.Actor
 import twitteranalyzer.TweetPercentUrlsActor.{RequestPercentUrl, ResponsePercentUrl}
 
 object TweetPercentUrlsActor {
+
   final case class RequestPercentUrl(correlationId: String)
+
   final case class ResponsePercentUrl(correlationId: String, percent: Double)
+
 }
 
 class TweetPercentUrlsActor extends Actor {

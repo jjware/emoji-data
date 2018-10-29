@@ -6,10 +6,15 @@ import akka.actor.Actor
 import twitteranalyzer.TweetRateActor.{RequestByHour, RequestByMinute, RequestBySecond, ResponseRate}
 
 object TweetRateActor {
+
   final case class RequestByHour(correlationId: String)
+
   final case class RequestByMinute(correlationId: String)
+
   final case class RequestBySecond(correlationId: String)
+
   final case class ResponseRate(correlationId: String, value: Long)
+
 }
 
 class TweetRateActor extends Actor {

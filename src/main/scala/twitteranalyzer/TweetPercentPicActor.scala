@@ -6,8 +6,11 @@ import twitteranalyzer.TweetPercentPicActor.{RequestPercentPic, ResponsePercentP
 import scala.annotation.tailrec
 
 object TweetPercentPicActor {
+
   final case class RequestPercentPic(correlationId: String)
+
   final case class ResponsePercentPic(correlationId: String, percent: Double)
+
 }
 
 class TweetPercentPicActor extends Actor {
@@ -16,7 +19,7 @@ class TweetPercentPicActor extends Actor {
   private def onMessage(accTotal: Long, accHasPic: Long): Receive = {
     case TweetMessage(tweet) =>
       val step = if (containsPicUrl(tweet.entities.urls)) 1 else 0
-      context become onMessage(accTotal + 1, accHasPic  + step)
+      context become onMessage(accTotal + 1, accHasPic + step)
     case RequestPercentPic(id) =>
       val percent: Double = if (accTotal > 0) {
         accHasPic.toDouble / accTotal.toDouble * 100d

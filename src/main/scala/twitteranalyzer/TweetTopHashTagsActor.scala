@@ -7,8 +7,11 @@ import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 
 object TweetTopHashTagsActor {
+
   final case class RequestTopHashTags(correlationId: String, num: Int)
+
   final case class ResponseTopHashTags(correlationId: String, hashTags: List[String])
+
 }
 
 class TweetTopHashTagsActor extends Actor {
@@ -18,7 +21,7 @@ class TweetTopHashTagsActor extends Actor {
     case TweetMessage(tweet) =>
       context become onMessage(populateMap(hashMap, tweet.entities.hashTags))
     case RequestTopHashTags(id, num) =>
-      val topHashTags = hashMap.toList.sortBy(- _._2).take(num)
+      val topHashTags = hashMap.toList.sortBy(-_._2).take(num)
       sender() ! ResponseTopHashTags(id, topHashTags.map(_._1))
   }
 

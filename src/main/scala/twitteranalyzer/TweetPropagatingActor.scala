@@ -4,6 +4,13 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.fasterxml.jackson.databind.ObjectMapper
 import twitteranalyzer.TweetPropagatingActor.Message
 
+object TweetPropagatingActor {
+  def props(actors: List[ActorRef], mapper: ObjectMapper): Props = Props(new TweetPropagatingActor(actors, mapper))
+
+  final case class Message(text: String)
+
+}
+
 class TweetPropagatingActor(actors: List[ActorRef], mapper: ObjectMapper) extends Actor with ActorLogging {
   override def receive: Receive = {
     case Message(text) =>
@@ -18,10 +25,4 @@ class TweetPropagatingActor(actors: List[ActorRef], mapper: ObjectMapper) extend
         case e: Exception => log.error("exception while deserializing tweet: {}", e)
       }
   }
-}
-
-object TweetPropagatingActor {
-  def props(actors: List[ActorRef], mapper: ObjectMapper): Props = Props(new TweetPropagatingActor(actors, mapper))
-
-  final case class Message(text: String)
 }
